@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Systems - Q&A Brief</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .question {
+            background: #ecf0f1;
+            border-left: 5px solid #3498db;
+            padding: 15px 20px;
+            margin: 25px 0 10px 0;
+            border-radius: 5px;
+        }
+        .question h3 {
+            margin: 0;
+            color: #2980b9;
+            font-size: 1.1em;
+        }
+        .answer {
+            background: #fff;
+            padding: 15px 20px;
+            margin: 0 0 20px 0;
+            border-left: 3px solid #95a5a6;
+            border-radius: 5px;
+        }
+        .answer p {
+            margin: 8px 0;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        li {
+            margin: 6px 0;
+        }
+        .highlight {
+            background: #fff9c4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        .number {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 RAG Systems - Key Questions Answered</h1>
+
+        <div class="question">
+            <h3><span class="number">1</span>What are the key benefits of using vector embeddings in RAG?</h3>
+        </div>
+        <div class="answer">
+            <p><strong>Vector embeddings enable:</strong></p>
+            <ul>
+                <li><span class="highlight">Semantic search</span> - Find conceptually related content, not just keyword matches</li>
+                <li><span class="highlight">Similarity understanding</span> - "turtle" and "tortoise" recognized as related despite different words</li>
+                <li><span class="highlight">Context awareness</span> - Same word, different meanings based on context (e.g., "bank" financial vs river)</li>
+                <li><span class="highlight">Efficient retrieval</span> - Fast similarity calculations in high-dimensional space</li>
+                <li><span class="highlight">Bridging vocabulary gaps</span> - Users and documents can use different terminology</li>
+            </ul>
+        </div>
+
+        <div class="question">
+            <h3><span class="number">2</span>How does MMR improve document retrieval?</h3>
+        </div>
+        <div class="answer">
+            <p><strong>Maximum Marginal Relevance (MMR) balances two objectives:</strong></p>
+            <ul>
+                <li><span class="highlight">Relevance</span> - Selects documents similar to the query</li>
+                <li><span class="highlight">Diversity</span> - Ensures retrieved documents are distinct from each other</li>
+            </ul>
+            <p><strong>Result:</strong> Prevents redundant information by retrieving varied perspectives while maintaining relevance. Controlled by lambda_mult parameter (0 = max diversity, 1 = max relevance).</p>
+        </div>
+
+        <div class="question">
+            <h3><span class="number">3</span>Why is chunking necessary for effective document retrieval?</h3>
+        </div>
+        <div class="answer">
+            <p><strong>Chunking is essential because:</strong></p>
+            <ul>
+                <li><span class="highlight">Context window limits</span> - LLMs have maximum input sizes; large documents exceed these limits</li>
+                <li><span class="highlight">Retrieval precision</span> - Smaller chunks provide more focused, relevant content</li>
+                <li><span class="highlight">Embedding quality</span> - Shorter text creates more accurate semantic representations</li>
+                <li><span class="highlight">Processing efficiency</span> - Manageable pieces process faster and use less memory</li>
+                <li><span class="highlight">Response relevance</span> - Prevents irrelevant sections from diluting important information</li>
+            </ul>
+            <p><strong>Note:</strong> Poor chunking can break related concepts and lose critical context.</p>
+        </div>
+
+        <div class="question">
+            <h3><span class="number">4</span>What strategies can be used to mitigate hallucinations in RAG implementations?</h3>
+        </div>
+        <div class="answer">
+            <p><strong>Key anti-hallucination strategies:</strong></p>
+            <ul>
+                <li><span class="highlight">Source grounding</span> - Always generate responses based on retrieved documents</li>
+                <li><span class="highlight">Citation requirements</span> - Force model to cite sources for each claim</li>
+                <li><span class="highlight">Self-consistency checking</span> - Verify generated responses against retrieved context</li>
+                <li><span class="highlight">Explicit validation</span> - Compare factual claims to source documents</li>
+                <li><span class="highlight">Temperature control</span> - Lower temperature (0-0.2) reduces creative fabrication</li>
+                <li><span class="highlight">Prompt engineering</span> - Instruct model to say "information not found" when uncertain</li>
+                <li><span class="highlight">Retrieval evaluation</span> - Check if retrieved documents actually contain relevant info (CRAG approach)</li>
+            </ul>
+        </div>
+
+        <div class="question">
+            <h3><span class="number">5</span>How do hybrid search techniques enhance the retrieval process?</h3>
+        </div>
+        <div class="answer">
+            <p><strong>Hybrid search combines two complementary approaches:</strong></p>
+            <ul>
+                <li><span class="highlight">Dense retrieval (semantic)</span> - Vector embeddings capture meaning and context</li>
+                <li><span class="highlight">Sparse retrieval (lexical)</span> - BM25/TF-IDF for exact keyword matching</li>
+            </ul>
+            <p><strong>Benefits:</strong></p>
+            <ul>
+                <li>Handles technical terminology precisely (sparse)</li>
+                <li>Understands conceptual relationships (dense)</li>
+                <li>Covers vocabulary mismatches</li>
+                <li>Improved recall without sacrificing precision</li>
+            </ul>
+            <p><strong>Example:</strong> Query "ML algorithms" finds both "machine learning algorithms" (semantic) and exact term "ML" (keyword).</p>
+        </div>
+
+        <div class="question">
+            <h3><span class="number">6</span>What are the key components of a chatbot utilizing RAG principles?</h3>
+        </div>
+        <div class="answer">
+            <p><strong>Essential RAG chatbot components:</strong></p>
+            <ul>
+                <li><span class="highlight">Document Loader</span> - Ingests various file formats (PDF, DOCX, TXT, etc.)</li>
+                <li><span class="highlight">Text Splitter</span> - Chunks documents into manageable pieces</li>
+                <li><span class="highlight">Embedding Model</span> - Converts text to vector representations</li>
+                <li><span class="highlight">Vector Store</span> - Stores and indexes embeddings for fast retrieval</li>
+                <li><span class="highlight">Retriever</span> - Finds relevant documents based on query</li>
+                <li><span class="highlight">LLM</span> - Generates responses using retrieved context</li>
+                <li><span class="highlight">Prompt Template</span> - Structures how context and query are presented</li>
+                <li><span class="highlight">Memory/State Management</span> - Tracks conversation history (optional but common)</li>
+            </ul>
+        </div>
+
+        <div class="question">
+            <h3><span class="number">7</span>Why is performance evaluation critical in RAG-based systems?</h3>
+        </div>
+        <div class="answer">
+            <p><strong>Performance evaluation is critical because:</strong></p>
+            <ul>
+                <li><span class="highlight">Quality assurance</span> - Ensures accurate, relevant responses meet requirements</li>
+                <li><span class="highlight">Retrieval optimization</span> - Identifies if correct documents are being found</li>
+                <li><span class="highlight">Cost management</span> - Monitors API usage, token consumption, latency</li>
+                <li><span class="highlight">Failure detection</span> - Catches common issues (missing content, poor ranking, extraction failures)</li>
+                <li><span class="highlight">User satisfaction</span> - Measures if system meets real-world needs</li>
+                <li><span class="highlight">Continuous improvement</span> - Provides data for iterative optimization</li>
+            </ul>
+            <p><strong>Key metrics:</strong> Precision, recall, mean reciprocal rank (retrieval); answer accuracy, hallucination rate (generation); latency, throughput (performance).</p>
+        </div>
+
+        <div class="question">
+            <h3><span class="number">8</span>What are the different retrieval methods in RAG systems?</h3>
+        </div>
+        <div class="answer">
+            <p><strong>Main retrieval methods:</strong></p>
+            <ul>
+                <li><span class="highlight">Dense retrieval</span> - Semantic vector similarity (cosine, dot product)</li>
+                <li><span class="highlight">Sparse retrieval</span> - Keyword-based (BM25, TF-IDF)</li>
+                <li><span class="highlight">Hybrid retrieval</span> - Combines dense + sparse with weighted fusion</li>
+                <li><span class="highlight">Re-ranking</span> - Two-stage: initial retrieval + sophisticated re-scoring</li>
+                <li><span class="highlight">MMR retrieval</span> - Balances relevance with diversity</li>
+                <li><span class="highlight">Filtered retrieval</span> - Applies metadata constraints (date ranges, categories)</li>
+                <li><span class="highlight">Multi-query retrieval</span> - Expands single query into multiple variations</li>
+                <li><span class="highlight">HyDE</span> - Generates hypothetical answer, retrieves based on that</li>
+            </ul>
+        </div>
+
+        <div class="question">
+            <h3><span class="number">9</span>How does contextual compression refine retrieved information before LLM processing?</h3>
+        </div>
+        <div class="answer">
+            <p><strong>Contextual compression works by:</strong></p>
+            <ul>
+                <li><span class="highlight">Extracting relevance</span> - Uses LLM to identify only relevant portions of documents</li>
+                <li><span class="highlight">Removing noise</span> - Filters out irrelevant content that might distract the generator</li>
+                <li><span class="highlight">Preserving context</span> - Maintains essential information while reducing length</li>
+                <li><span class="highlight">Optimizing token usage</span> - Maximizes value of limited context window</li>
+            </ul>
+            <p><strong>Process:</strong></p>
+            <ol>
+                <li>Initial retrieval fetches candidate documents</li>
+                <li>Compressor analyzes each document against query</li>
+                <li>Extracts only query-relevant sentences/paragraphs</li>
+                <li>Compressed content passed to LLM for generation</li>
+            </ol>
+            <p><strong>Benefit:</strong> Provides focused, high-signal context to the LLM, improving answer quality and reducing hallucinations.</p>
+        </div>
+    </div>
+</body>
+</html>

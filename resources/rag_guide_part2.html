@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Intelligent RAG Systems - Part 2</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            font-size: 2.5em;
+            margin-top: 0;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+            font-size: 1.8em;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+            font-size: 1.4em;
+        }
+        h4 {
+            color: #555;
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        pre {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-left: 3px solid #3498db;
+            color: #333;
+            page-break-inside: avoid;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            margin-bottom: 20px;
+            max-width: 100%;
+            overflow: auto;
+            padding: 15px;
+            display: block;
+            word-wrap: break-word;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .important {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            font-size: 0.85em;
+        }
+        th {
+            background: #3498db;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .chapter-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            margin: -20px -20px 30px -20px;
+            text-align: center;
+        }
+        .chapter-number {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        .toc {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .toc h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .toc li {
+            padding: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="chapter-header">
+        <div class="chapter-number">CHAPTER 4 - PART 2</div>
+        <h1 style="border: none; color: white; margin: 0;">Building Intelligent RAG Systems</h1>
+        <p style="margin-top: 10px; font-size: 1.1em;">Vector Stores, Retrieval & Implementation</p>
+    </div>
+
+    <div class="toc">
+        <h3>📚 Part 2 Contents</h3>
+        <ul>
+            <li>• Vector Stores Deep Dive</li>
+            <li>• Vector Indexing Strategies</li>
+            <li>• Breaking Down the RAG Pipeline</li>
+            <li>• Document Processing & Chunking</li>
+            <li>• Building the Corporate Documentation Chatbot</li>
+            <li>• Advanced RAG Techniques</li>
+            <li>• Troubleshooting RAG Systems</li>
+        </ul>
+    </div>
+
+    <h2>Vector Stores: Specialized Storage for Embeddings</h2>
+
+    <p>Vector stores are specialized databases designed to store, manage, and efficiently search vector embeddings. Once we have OpenAI embeddings (1536-dimensional vectors), we need a purpose-built system to store them.</p>
+
+    <h3>Why Vector Stores?</h3>
+
+    <p>Unlike regular databases, vector stores solve fundamental challenges:</p>
+
+    <ul>
+        <li><strong>Scale:</strong> Applications often need millions of embeddings</li>
+        <li><strong>Dimensionality:</strong> Each embedding has hundreds/thousands of dimensions</li>
+        <li><strong>Search Performance:</strong> Finding similar vectors is computationally intensive</li>
+        <li><strong>Associated Data:</strong> Maintaining connections between vectors and source documents</li>
+    </ul>
+
+    <h4>Example Document Data Structure</h4>
+
+    <pre><code># What needs efficient storage in a vector store
+document_data = {
+    "id": "doc_42",
+    "text": "LangChain is a framework for developing applications "
+            "powered by language models.",
+    "embedding": [0.123, -0.456, 0.789, ...],  # 1536 dimensions
+    "metadata": {
+        "source": "documentation.pdf",
+        "page": 7,
+        "created_at": "2023-06-15"
+    }
+}</code></pre>
+
+    <h3>Core Components</h3>
+
+    <p>Vector stores combine two essential components:</p>
+
+    <ol>
+        <li><strong>Vector Storage:</strong> The actual database persisting vectors and metadata</li>
+        <li><strong>Vector Index:</strong> Specialized data structure enabling efficient similarity search</li>
+    </ol>
+
+    <div class="warning">
+        <strong>⚠️ The Curse of Dimensionality:</strong><br>
+        As vector dimensions increase, computing similarities becomes increasingly expensive, requiring O(dN) operations for d dimensions and N vectors. This makes naive similarity search impractical for large-scale applications.
+    </div>
+
+    <h3>Vector Stores vs Traditional Databases</h3>
+
+    <table>
+        <tr>
+            <th>Aspect</th>
+            <th>Traditional Database</th>
+            <th>Vector Store</th>
+        </tr>
+        <tr>
+            <td><strong>Search Type</strong></td>
+            <td>Exact matching (equality, ranges)</td>
+            <td>Similarity metrics (cosine, Euclidean)</td>
+        </tr>
+        <tr>
+            <td><strong>Data Structure</strong></td>
+            <td>Structured data (rows/columns)</td>
+            <td>High-dimensional vector spaces</td>
+        </tr>
+        <tr>
+            <td><strong>Indexing</strong></td>
+            <td>B-trees, hash-based indexes</td>
+            <td>ANN algorithms (HNSW, IVF)</td>
+        </tr>
+        <tr>
+            <td><strong>Example Query</strong></td>
+            <td>"Find customers with age > 30"</td>
+            <td>"Find documents similar to query vector"</td>
+        </tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h3>Popular Vector Store Comparison</h3>
+
+    <table>
+        <tr>
+            <th>Database</th>
+            <th>Deployment</th>
+            <th>License</th>
+            <th>Notable Features</th>
+        </tr>
+        <tr>
+            <td><strong>Pinecone</strong></td>
+            <td>Cloud-only</td>
+            <td>Commercial</td>
+            <td>Auto-scaling, enterprise security, monitoring</td>
+        </tr>
+        <tr>
+            <td><strong>Milvus</strong></td>
+            <td>Cloud, Self-hosted</td>
+            <td>Apache 2.0</td>
+            <td>HNSW/IVF indexing, multi-modal support, CRUD</td>
+        </tr>
+        <tr>
+            <td><strong>Weaviate</strong></td>
+            <td>Cloud, Self-hosted</td>
+            <td>BSD 3-Clause</td>
+            <td>Graph-like structure, multi-modal</td>
+        </tr>
+        <tr>
+            <td><strong>Qdrant</strong></td>
+            <td>Cloud, Self-hosted</td>
+            <td>Apache 2.0</td>
+            <td>HNSW indexing, filtering optimization</td>
+        </tr>
+        <tr>
+            <td><strong>ChromaDB</strong></td>
+            <td>Cloud, Self-hosted</td>
+            <td>Apache 2.0</td>
+            <td>Lightweight, easy setup</td>
+        </tr>
+        <tr>
+            <td><strong>pg_vector</strong></td>
+            <td>Cloud, Self-hosted</td>
+            <td>OSS</td>
+            <td>SQL support, PostgreSQL integration</td>
+        </tr>
+    </table>
+
+    <h3>Search Patterns in Vector Stores</h3>
+
+    <p>Modern vector stores support several search patterns:</p>
+
+    <h4>1. Exact Search</h4>
+    <ul>
+        <li>Returns precise nearest neighbors</li>
+        <li>Computationally prohibitive with large collections</li>
+        <li>Best for small datasets or baseline testing</li>
+    </ul>
+
+    <h4>2. Approximate Search</h4>
+    <ul>
+        <li>Trades accuracy for speed using LSH, HNSW, or quantization</li>
+        <li>Measured by recall (% of true nearest neighbors retrieved)</li>
+        <li>Essential for production RAG systems</li>
+    </ul>
+
+    <h4>3. Hybrid Search</h4>
+    <ul>
+        <li>Combines vector similarity with text-based search (BM25)</li>
+        <li>Single query for semantic + keyword matching</li>
+        <li>Best of both worlds approach</li>
+    </ul>
+
+    <h4>4. Filtered Vector Search</h4>
+    <ul>
+        <li>Applies metadata constraints alongside vector similarity</li>
+        <li>Example: "Find similar documents from last 30 days"</li>
+    </ul>
+
+    <h3>Embedding Types</h3>
+
+    <table>
+        <tr>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Example Models</th>
+        </tr>
+        <tr>
+            <td><strong>Dense Vectors</strong></td>
+            <td>Continuous embeddings, most values non-zero</td>
+            <td>BERT, OpenAI embeddings</td>
+        </tr>
+        <tr>
+            <td><strong>Sparse Vectors</strong></td>
+            <td>High-dimensional, most values zero</td>
+            <td>TF-IDF, BM25</td>
+        </tr>
+        <tr>
+            <td><strong>Hybrid</strong></td>
+            <td>Combines both approaches</td>
+            <td>SPLADE, ColBERT</td>
+        </tr>
+    </table>
+
+    <h3>Similarity Measures</h3>
+
+    <p>Vector stores offer multiple similarity measures:</p>
+
+    <ul>
+        <li><strong>Inner Product:</strong> Useful for comparing semantic directions</li>
+        <li><strong>Cosine Similarity:</strong> Normalizes for vector magnitude</li>
+        <li><strong>Euclidean Distance:</strong> Measures L2 distance in vector space</li>
+        <li><strong>Hamming Distance:</strong> For binary vector representations</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h3>Local vs Cloud Storage</h3>
+
+    <table>
+        <tr>
+            <th>Consideration</th>
+            <th>Local Storage</th>
+            <th>Cloud Storage</th>
+        </tr>
+        <tr>
+            <td><strong>Best For</strong></td>
+            <td>Maximum control, strict privacy, smaller scale</td>
+            <td>Elastic scaling, managed services, distributed apps</td>
+        </tr>
+        <tr>
+            <td><strong>Cost</strong></td>
+            <td>Hardware investment, maintenance</td>
+            <td>Pay-as-you-go, operational expenses</td>
+        </tr>
+        <tr>
+            <td><strong>Scaling</strong></td>
+            <td>Manual capacity planning</td>
+            <td>Automatic, on-demand</td>
+        </tr>
+        <tr>
+            <td><strong>Maintenance</strong></td>
+            <td>Team responsibility</td>
+            <td>Provider-managed</td>
+        </tr>
+    </table>
+
+    <h3>Hardware Considerations</h3>
+
+    <div class="info">
+        <strong>Key Hardware Requirements:</strong>
+        <ul>
+            <li><strong>Memory:</strong> 16-64GB RAM for millions of embeddings in production</li>
+            <li><strong>CPU vs GPU:</strong> GPU acceleration provides 10-50x speed improvement for large-scale searches</li>
+            <li><strong>Storage Speed:</strong> SSDs strongly recommended over HDDs for production</li>
+            <li><strong>Network:</strong> Bandwidth critical for cloud/distributed setups</li>
+        </ul>
+    </div>
+
+    <h3>Vector Store Interface in LangChain</h3>
+
+    <pre><code>from langchain_openai import OpenAIEmbeddings
+from langchain_chroma import Chroma
+
+# Initialize with an embedding model
+embeddings = OpenAIEmbeddings()
+vector_store = Chroma(embedding_function=embeddings)</code></pre>
+
+    <h4>Essential Operations</h4>
+
+    <pre><code># 1. Adding documents
+from langchain_core.documents import Document
+
+docs = [
+    Document(page_content="Content 1"),
+    Document(page_content="Content 2")
+]
+ids = vector_store.add_documents(docs)
+
+# 2. Similarity search
+results = vector_store.similarity_search(
+    "How does LangChain work?",
+    k=3
+)
+
+# 3. Deletion
+vector_store.delete(ids=["doc_1", "doc_2"])
+
+# 4. Maximum marginal relevance search (reduce redundancy)
+results = vector_store.max_marginal_relevance_search(
+    "How does LangChain work?",
+    k=3,
+    fetch_k=10,
+    lambda_mult=0.5  # 0=max diversity, 1=max relevance
+)</code></pre>
+
+    <h3>Beyond RAG: Other Vector Store Applications</h3>
+
+    <ul>
+        <li>Anomaly detection in large datasets</li>
+        <li>Personalization and recommendation systems</li>
+        <li>NLP tasks (classification, clustering)</li>
+        <li>Fraud detection</li>
+        <li>Network security monitoring</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h2>Vector Indexing Strategies</h2>
+
+    <p>Vector indexing solves the performance challenge of finding similar vectors without comparing against every single vector in the database (brute force), which is computationally prohibitive for even medium-sized data volumes.</p>
+
+    <div class="info">
+        <strong>Why Indexing Matters:</strong><br>
+        Without proper indexing, searching through vectors would be like finding a book in a library with no organization system – you'd have to check every single book. Proper indexing transforms vector search from O(n) to O(log n) complexity.
+    </div>
+
+    <h3>Common Indexing Approaches</h3>
+
+    <ol>
+        <li><strong>Tree-Based Structures:</strong> Hierarchically divide the vector space</li>
+        <li><strong>Graph-Based Methods:</strong> HNSW creates navigable networks of connected vectors</li>
+        <li><strong>Hashing Techniques:</strong> Map similar vectors to same "buckets"</li>
+    </ol>
+
+    <h3>Indexing Strategy Trade-offs</h3>
+
+    <table>
+        <tr>
+            <th>Strategy</th>
+            <th>Search Complexity</th>
+            <th>Memory</th>
+            <th>Best For</th>
+        </tr>
+        <tr>
+            <td><strong>Exact Search</strong></td>
+            <td>O(DN)</td>
+            <td>Low</td>
+            <td>Small datasets, 100% recall needed</td>
+        </tr>
+        <tr>
+            <td><strong>HNSW</strong></td>
+            <td>O(log N)</td>
+            <td>High</td>
+            <td>Production systems, large-scale</td>
+        </tr>
+        <tr>
+            <td><strong>LSH</strong></td>
+            <td>O(N^ρ)</td>
+            <td>Medium</td>
+            <td>Streaming data, frequent updates</td>
+        </tr>
+        <tr>
+            <td><strong>IVF</strong></td>
+            <td>O(DN/k)</td>
+            <td>Low</td>
+            <td>Limited memory, balance needed</td>
+        </tr>
+        <tr>
+            <td><strong>Product Quantization</strong></td>
+            <td>Varies</td>
+            <td>Very Low</td>
+            <td>Memory-constrained, massive datasets</td>
+        </tr>
+    </table>
+
+    <h3>Detailed Strategy Comparison</h3>
+
+    <h4>1. Exact Search (Brute Force)</h4>
+    <p><strong>How it works:</strong> Compares query vector with every vector in database</p>
+    <ul>
+        <li><strong>Pros:</strong> Easiest to implement, 100% recall, good baseline</li>
+        <li><strong>Cons:</strong> Slow for large datasets, O(DN) complexity</li>
+        <li><strong>Use when:</strong> Dataset < 100K vectors, testing/baseline</li>
+    </ul>
+
+    <h4>2. HNSW (Hierarchical Navigable Small World)</h4>
+    <p><strong>How it works:</strong> Creates layered graph with decreasing connectivity from bottom to top</p>
+    <ul>
+        <li><strong>Pros:</strong> Industry standard, O(log N) search, high accuracy</li>
+        <li><strong>Cons:</strong> High memory usage, requires tuning M (connections) and ef (search depth)</li>
+        <li><strong>Use when:</strong> Production systems, millions of vectors, high accuracy needed</li>
+    </ul>
+
+    <h4>3. LSH (Locality Sensitive Hashing)</h4>
+    <p><strong>How it works:</strong> Hash functions map similar vectors to same buckets</p>
+    <ul>
+        <li><strong>Pros:</strong> Good for dynamic data, tunable accuracy vs speed</li>
+        <li><strong>Cons:</strong> Requires multiple hash tables</li>
+        <li><strong>Use when:</strong> Frequent updates, streaming data</li>
+    </ul>
+
+    <h4>4. IVF (Inverted File Index)</h4>
+    <p><strong>How it works:</strong> Clusters vectors and searches within relevant clusters</p>
+    <ul>
+        <li><strong>Pros:</strong> Low memory, simple implementation, often combined with other methods</li>
+        <li><strong>Cons:</strong> Requires cluster training (k-means)</li>
+        <li><strong>Use when:</strong> Limited memory, need balance of speed/accuracy</li>
+    </ul>
+
+    <h4>5. Product Quantization (PQ)</h4>
+    <p><strong>How it works:</strong> Compresses vectors by splitting into subspaces and quantizing</p>
+    <ul>
+        <li><strong>Pros:</strong> Very low memory (10-20x reduction), good for massive datasets</li>
+        <li><strong>Cons:</strong> Complex implementation, requires training codebooks</li>
+        <li><strong>Use when:</strong> Memory-constrained, billions of documents, often with IVF</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h3>Practical Performance Example</h3>
+
+    <pre><code>import numpy as np
+import faiss
+import time
+
+# Create sample data - 10,000 vectors with 128 dimensions
+dimension = 128
+num_vectors = 10000
+vectors = np.random.random((num_vectors, dimension)).astype('float32')
+query = np.random.random((1, dimension)).astype('float32')
+
+# Exact search index
+exact_index = faiss.IndexFlatL2(dimension)
+exact_index.add(vectors)
+
+# HNSW index (approximate but faster)
+hnsw_index = faiss.IndexHNSWFlat(dimension, 32)  # 32 connections
+hnsw_index.add(vectors)
+
+# Compare search times
+start_time = time.time()
+exact_D, exact_I = exact_index.search(query, k=10)
+exact_time = time.time() - start_time
+
+start_time = time.time()
+hnsw_D, hnsw_I = hnsw_index.search(query, k=10)
+hnsw_time = time.time() - start_time
+
+# Calculate overlap
+overlap = len(set(exact_I[0]).intersection(set(hnsw_I[0])))
+overlap_percentage = overlap * 100 / 10
+
+print(f"Exact search time: {exact_time:.6f} seconds")
+print(f"HNSW search time: {hnsw_time:.6f} seconds")
+print(f"Speed improvement: {exact_time/hnsw_time:.2f}x faster")
+print(f"Result overlap: {overlap_percentage:.1f}%")</code></pre>
+
+    <p><strong>Typical Output:</strong></p>
+    <pre><code>Exact search time: 0.003210 seconds
+HNSW search time: 0.000412 seconds
+Speed improvement: 7.79x faster
+Result overlap: 90.0%</code></pre>
+
+    <div class="warning">
+        <strong>⚠️ The Trade-off:</strong><br>
+        Exact search guarantees finding true nearest neighbors but takes longer. HNSW provides approximate results significantly faster. For small datasets (10K vectors), the difference is minimal, but as datasets grow to millions/billions, exact search becomes prohibitively expensive while HNSW maintains logarithmic scaling.
+    </div>
+
+    <h3>Choosing the Right Strategy</h3>
+
+    <div class="info">
+        <strong>Decision Guide:</strong>
+        <ol>
+            <li><strong>Dataset Size < 100K:</strong> Exact search viable</li>
+            <li><strong>Memory Limited:</strong> Consider IVF+PQ for compression</li>
+            <li><strong>Frequent Updates:</strong> LSH supports efficient updates</li>
+            <li><strong>Need Ultra-Low Latency:</strong> HNSW typically fastest</li>
+            <li><strong>Production Systems:</strong> HNSW or IVF+HNSW combination</li>
+        </ol>
+    </div>
+
+    <h3>Popular Vector Libraries</h3>
+
+    <ul>
+        <li><strong>FAISS (Meta):</strong> Efficient similarity search, supports PQ, LSH, HNSW, CPU/GPU</li>
+        <li><strong>Annoy (Spotify):</strong> C++ library, random projection trees</li>
+        <li><strong>hnswlib:</strong> C++ library for HNSW algorithm</li>
+        <li><strong>nmslib:</strong> Supports various algorithms including HNSW, SW-graph, SPTAG</li>
+        <li><strong>SPTAG (Microsoft):</strong> Distributed ANN, k-d tree and balanced k-means approaches</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h2>Breaking Down the RAG Pipeline</h2>
+
+    <p>Think of the RAG pipeline as an assembly line in a library, where raw materials (documents) get transformed into a searchable knowledge base that can answer questions.</p>
+
+    <h3>1. Document Processing – The Foundation</h3>
+
+    <p>Document processing prepares books for the library:</p>
+
+    <ul>
+        <li><strong>Loading:</strong> Using appropriate document loaders (PDF, HTML, text, etc.)</li>
+        <li><strong>Transformation:</strong> Converting to standard format</li>
+        <li><strong>Splitting:</strong> Breaking into smaller, meaningful chunks</li>
+    </ul>
+
+    <p><strong>Example:</strong> Processing a textbook into chapter-sized or paragraph-sized chunks while preserving context in metadata.</p>
+
+    <h3>2. Vector Indexing – Creating the Card Catalog</h3>
+
+    <p>Making documents searchable:</p>
+
+    <ul>
+        <li>Embedding model converts each chunk into a vector</li>
+        <li>Vectors organized in a data structure (vector store)</li>
+        <li>Maintains connections between vectors and original documents</li>
+    </ul>
+
+    <h3>3. Vector Stores – The Organized Shelves</h3>
+
+    <p>Vector stores are like organized library shelves:</p>
+
+    <ul>
+        <li>Store document vectors and original content</li>
+        <li>Provide efficient search methods</li>
+        <li>Offer organization methods (HNSW, IVF) balancing speed and accuracy</li>
+    </ul>
+
+    <h3>4. Retrieval – Finding the Right Books</h3>
+
+    <p>When a question arrives:</p>
+
+    <ol>
+        <li>Question converted to vector using same embedding model</li>
+        <li>Vector store finds documents with most similar vectors</li>
+        <li>Retriever applies additional logic:
+            <ul>
+                <li>Removing duplicate information</li>
+                <li>Balancing relevance and diversity</li>
+                <li>Combining results from different methods</li>
+            </ul>
+        </li>
+    </ol>
+
+    <h3>Basic RAG Implementation</h3>
+
+    <pre><code>from langchain.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
+from langchain_community.document_loaders import JSONLoader
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+
+# 1. Load documents
+loader = JSONLoader(
+    file_path="knowledge_base.json",
+    jq_schema=".[].content",
+    text_content=True
+)
+documents = loader.load()
+
+# 2. Convert to vectors
+embedder = OpenAIEmbeddings()
+embeddings = embedder.embed_documents(
+    [doc.page_content for doc in documents]
+)
+
+# 3. Store in vector database
+vector_db = FAISS.from_documents(documents, embedder)
+
+# 4. Retrieve similar docs
+query = "What are the effects of climate change?"
+results = vector_db.similarity_search(query)</code></pre>
+
+    <div class="page-break"></div>
+
+    <h2>Document Processing in Detail</h2>
+
+    <h3>Document Loaders</h3>
+
+    <p>A document loader transforms various data sources into a standardized format (Document objects) that can be used throughout LangChain.</p>
+
+    <div class="info">
+        <strong>Document Class Structure:</strong>
+        <ul>
+            <li><strong>page_content:</strong> Required text content</li>
+            <li><strong>metadata:</strong> Optional dictionary of associated information</li>
+            <li><strong>id:</strong> Optional UUID for unique identification</li>
+        </ul>
+    </div>
+
+    <h3>Common Document Loaders</h3>
+
+    <table>
+        <tr>
+            <th>Category</th>
+            <th>Examples</th>
+            <th>Use Cases</th>
+        </tr>
+        <tr>
+            <td><strong>File Systems</strong></td>
+            <td>TextLoader, CSVLoader, PDFLoader</td>
+            <td>Local documents, data files</td>
+        </tr>
+        <tr>
+            <td><strong>Web Content</strong></td>
+            <td>WebBaseLoader, RecursiveURLLoader</td>
+            <td>Web scraping, content aggregation</td>
+        </tr>
+        <tr>
+            <td><strong>Cloud Storage</strong></td>
+            <td>S3DirectoryLoader, GCSFileLoader</td>
+            <td>Enterprise data integration</td>
+        </tr>
+        <tr>
+            <td><strong>Databases</strong></td>
+            <td>MongoDBLoader, SnowflakeLoader</td>
+            <td>Business intelligence, analysis</td>
+        </tr>
+        <tr>
+            <td><strong>Productivity</strong></td>
+            <td>NotionDirectoryLoader, SlackDirectoryLoader</td>
+            <td>Knowledge base creation</td>
+        </tr>
+        <tr>
+            <td><strong>Scientific</strong></td>
+            <td>ArxivLoader, PubMedLoader</td>
+            <td>Research applications</td>
+        </tr>
+    </table>
+
+    <h3>Example: Loading JSON Files</h3>
+
+    <pre><code>from langchain_community.document_loaders import JSONLoader
+
+# Load a json file
+loader = JSONLoader(
+    file_path="knowledge_base.json",
+    jq_schema=".[].content",
+    text_content=True
+)
+documents = loader.load()
+print(documents)</code></pre>
+
+    <h3>Chunking Strategies</h3>
+
+    <p>Chunking—how you divide documents—dramatically impacts RAG system

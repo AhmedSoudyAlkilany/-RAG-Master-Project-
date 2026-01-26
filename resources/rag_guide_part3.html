@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Intelligent RAG Systems - Part 2</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: 'Georgia', serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            font-size: 2.5em;
+            margin-top: 0;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+            font-size: 1.8em;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+            font-size: 1.4em;
+        }
+        h4 {
+            color: #555;
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        pre {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-left: 3px solid #3498db;
+            color: #333;
+            page-break-inside: avoid;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            line-height: 1.35;
+            margin-bottom: 20px;
+            max-width: 100%;
+            overflow: auto;
+            padding: 12px;
+            display: block;
+            word-wrap: break-word;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .important {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        ul, ol {
+            margin: 12px 0;
+            padding-left: 28px;
+        }
+        li {
+            margin: 6px 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            font-size: 0.8em;
+        }
+        th {
+            background: #3498db;
+            color: white;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            border: 1px solid #ddd;
+            padding: 7px;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .chapter-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            margin: -20px -20px 25px -20px;
+            text-align: center;
+        }
+        .chapter-number {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        .toc {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .toc h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .toc li {
+            padding: 4px 0;
+        }
+        p {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="chapter-header">
+        <div class="chapter-number">CHAPTER 4 - PART 2</div>
+        <h1 style="border: none; color: white; margin: 0;">Building Intelligent RAG Systems</h1>
+        <p style="margin-top: 8px; font-size: 1.05em;">Complete Implementation Guide with Code Examples</p>
+    </div>
+
+    <div class="toc">
+        <h3>📚 Part 2 Contents</h3>
+        <ul>
+            <li>• Chunking Strategies (Fixed-size, Recursive, Semantic)</li>
+            <li>• Document Retrieval & LangChain Retrievers</li>
+            <li>• Advanced RAG Techniques (Hybrid Search, Re-ranking, Query Transformation)</li>
+            <li>• Building Corporate Documentation Chatbot (Complete Code)</li>
+            <li>• Streamlit UI Integration</li>
+            <li>• Troubleshooting RAG Systems</li>
+        </ul>
+    </div>
+
+    <h2>Chunking Strategies</h2>
+
+    <p>Chunking impacts retrieval accuracy, context preservation, and response quality. Poor chunking can break apart related concepts and lose critical context.</p>
+
+    <h3>1. Fixed-Size Chunking</h3>
+
+    <p>Divides text into chunks of specified length without considering content structure:</p>
+
+    <pre><code>from langchain_text_splitters import CharacterTextSplitter
+
+text_splitter = CharacterTextSplitter(
+    separator=" ",  # Split on spaces
+    chunk_size=200,
+    chunk_overlap=20
+)
+chunks = text_splitter.split_documents(documents)
+print(f"Generated {len(chunks)} chunks from document")</code></pre>
+
+    <p><strong>Best for:</strong> Quick prototyping, uniform documents<br>
+    <strong>Limitation:</strong> Often splits at awkward positions</p>
+
+    <h3>2. Recursive Character Chunking (Recommended)</h3>
+
+    <p>Respects natural text boundaries by recursively applying separators:</p>
+
+    <pre><code>from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter(
+    separators=["\n\n", "\n", ". ", " ", ""],
+    chunk_size=150,
+    chunk_overlap=20
+)
+
+document = """# Introduction to RAG
+Retrieval-Augmented Generation (RAG) combines retrieval systems 
+with generative AI models.
+
+It helps address hallucinations by grounding responses in 
+retrieved information.
+
+## Key Components
+RAG consists of several components:
+1. Document processing
+2. Vector embedding
+3. Retrieval
+4. Augmentation
+5. Generation
+
+### Document Processing
+This step involves loading and chunking documents appropriately.
+"""
+
+chunks = text_splitter.split_text(document)
+print(chunks)</code></pre>
+
+    <p><strong>Output:</strong></p>
+    <pre><code>['# Introduction to RAG\nRetrieval-Augmented Generation (RAG) 
+combines retrieval systems with generative AI models.',
+'It helps address hallucinations by grounding responses in 
+retrieved information.',
+'## Key Components\nRAG consists of several components:\n
+1. Document processing\n2. Vector embedding\n3. Retrieval\n
+4. Augmentation\n5. Generation',
+'### Document Processing\nThis step involves loading and 
+chunking documents appropriately.']</code></pre>
+
+    <div class="info">
+<strong>How It Works:</strong><br>
+1. First tries to divide at paragraph breaks (\n\n)<br>
+2. If chunks still too large, tries next separator (\n)<br>
+3. Continues through separators until optimal size achieved
+    </div>
+
+    <h3>3. Semantic Chunking</h3>
+
+    <p>Analyzes meaning to determine chunk boundaries:</p>
+
+    <pre><code>from langchain_experimental.text_splitter import SemanticChunker
+from langchain_openai import OpenAIEmbeddings
+
+embeddings = OpenAIEmbeddings()
+text_splitter = SemanticChunker(
+    embeddings=embeddings,
+    add_start_index=True
+)
+chunks = text_splitter.split_text(document)</code></pre>
+
+    <p><strong>Process:</strong></p>
+    <ol>
+        <li>Splits text into sentences</li>
+        <li>Creates embeddings for sentence groups</li>
+        <li>Measures semantic similarity between groups</li>
+        <li>Identifies natural breakpoints where topics change</li>
+        <li>Creates semantically coherent chunks</li>
+    </ol>
+
+    <p><strong>Best for:</strong> Complex technical documents, high accuracy needs<br>
+    <strong>Trade-off:</strong> Higher compute costs for embedding generation</p>
+
+    <h3>Chunking Strategy Comparison</h3>
+
+    <table>
+        <tr>
+            <th>Strategy</th>
+            <th>When to Use</th>
+            <th>Chunk Size Guidance</th>
+        </tr>
+        <tr>
+            <td><strong>Fixed-size</strong></td>
+            <td>Quick prototyping, uniform docs</td>
+            <td>200-500 tokens</td>
+        </tr>
+        <tr>
+            <td><strong>Recursive</strong></td>
+            <td>Most applications (recommended default)</td>
+            <td>100-1000 tokens based on use case</td>
+        </tr>
+        <tr>
+            <td><strong>Document-specific</strong></td>
+            <td>Specialized formats (code, markdown)</td>
+            <td>Varies by structure</td>
+        </tr>
+        <tr>
+            <td><strong>Semantic</strong></td>
+            <td>Complex content, accuracy critical</td>
+            <td>Determined by semantic boundaries</td>
+        </tr>
+    </table>
+
+    <div class="warning">
+<strong>⚠️ Chunk Size Guidelines:</strong>
+<ul>
+    <li><strong>Fact-based QA:</strong> Smaller chunks (100-300 tokens)</li>
+    <li><strong>Complex reasoning:</strong> Larger chunks (500-1000 tokens)</li>
+    <li><strong>Context-heavy:</strong> Sliding window with significant overlap</li>
+</ul>
+    </div>
+
+    <div class="page-break"></div>
+
+    <h2>Document Retrieval</h2>
+
+    <h3>LangChain Retriever Interface</h3>
+
+    <p>A retriever accepts natural language queries and returns relevant documents:</p>
+
+    <ul>
+        <li><strong>Input:</strong> Query as string</li>
+        <li><strong>Processing:</strong> Applies retrieval logic</li>
+        <li><strong>Output:</strong> List of Document objects with page_content and metadata</li>
+    </ul>
+
+    <h3>Types of Retrievers</h3>
+
+    <h4>1. Vector Store Retrievers</h4>
+
+    <pre><code>from langchain_community.retrievers import KNNRetriever
+from langchain_openai import OpenAIEmbeddings
+
+retriever = KNNRetriever.from_documents(
+    documents,
+    OpenAIEmbeddings()
+)
+results = retriever.invoke("query")</code></pre>
+
+    <h4>2. Search API Retrievers</h4>
+
+    <pre><code>from langchain_community.retrievers.pubmed import PubMedRetriever
+
+retriever = PubMedRetriever()
+results = retriever.invoke("COVID research")</code></pre>
+
+    <h4>3. Hybrid Search</h4>
+
+    <p>Combines semantic and lexical search:</p>
+
+    <pre><code>from langchain.retrievers import EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
+from langchain.vectorstores import FAISS
+
+# Setup semantic retriever
+vector_retriever = vector_store.as_retriever(
+    search_kwargs={"k": 5}
+)
+
+# Setup lexical retriever
+bm25_retriever = BM25Retriever.from_documents(documents)
+bm25_retriever.k = 5
+
+# Combine retrievers
+hybrid_retriever = EnsembleRetriever(
+    retrievers=[vector_retriever, bm25_retriever],
+    weights=[0.7, 0.3]  # Weight semantic higher
+)
+
+results = hybrid_retriever.get_relevant_documents(
+    "climate change impacts"
+)</code></pre>
+
+    <div class="page-break"></div>
+
+    <h2>Advanced RAG Techniques</h2>
+
+    <h3>1. Re-Ranking</h3>
+
+    <p>Post-processing step to re-score documents:</p>
+
+    <pre><code>from langchain.retrievers.document_compressors import CohereRerank
+from langchain.retrievers import ContextualCompressionRetriever
+
+# Initialize the compressor
+compressor = CohereRerank(top_n=3)
+
+# Create compression retriever
+compression_retriever = ContextualCompressionRetriever(
+    base_compressor=compressor,
+    base_retriever=base_retriever
+)
+
+# Original vs Compressed documents
+original_docs = base_retriever.get_relevant_documents(
+    "How do transformers work?"
+)
+compressed_docs = compression_retriever.get_relevant_documents(
+    "How do transformers work?"
+)</code></pre>
+
+    <h3>2. Query Transformation</h3>
+
+    <h4>Query Expansion</h4>
+
+    <pre><code>from langchain.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI
+
+expansion_template = """Given the user question: {question}
+
+Generate three alternative versions that express the same 
+information need but with different wording:
+
+1."""
+
+expansion_prompt = PromptTemplate(
+    input_variables=["question"],
+    template=expansion_template
+)
+
+llm = ChatOpenAI(temperature=0.7)
+expansion_chain = expansion_prompt | llm | StrOutputParser()
+
+original_query = "What are the effects of climate change?"
+expanded_queries = expansion_chain.invoke(original_query)</code></pre>
+
+    <h4>Hypothetical Document Embeddings (HyDE)</h4>
+
+    <pre><code>hyde_template = """Based on the question: {question}
+
+Write a passage that could contain the answer to this question:"""
+
+hyde_prompt = PromptTemplate(
+    input_variables=["question"],
+    template=hyde_template
+)
+
+hyde_chain = hyde_prompt | llm | StrOutputParser()
+
+query = "What dietary changes can reduce carbon footprint?"
+hypothetical_doc = hyde_chain.invoke(query)
+
+# Use hypothetical document for retrieval
+embeddings = OpenAIEmbeddings()
+embedded_query = embeddings.embed_query(hypothetical_doc)
+results = vector_db.similarity_search_by_vector(embedded_query, k=3)</code></pre>
+
+    <h3>3. Maximum Marginal Relevance (MMR)</h3>
+
+    <p>Balances relevance with diversity:</p>
+
+    <pre><code>mmr_results = vector_store.max_marginal_relevance_search(
+    query="What are transformer models?",
+    k=5,  # Number to return
+    fetch_k=20,  # Number to initially fetch
+    lambda_mult=0.5  # 0=max diversity, 1=max relevance
+)</code></pre>
+
+    <div class="page-break"></div>
+
+    <h2>Building Corporate Documentation Chatbot</h2>
+
+    <h3>Project Structure</h3>
+
+    <pre><code>chapter4/
+├── document_loader.py    # Document loading utilities
+├── llms.py              # LLM and embeddings setup
+├── retriever.py         # Document retrieval logic
+├── rag.py               # RAG pipeline with LangGraph
+└── streamlit_app.py     # User interface</code></pre>
+
+    <h3>1. Document Loader (document_loader.py)</h3>
+
+    <pre><code>import logging
+import pathlib
+from typing import Any
+from langchain_community.document_loaders.epub import \
+    UnstructuredEPubLoader
+from langchain_community.document_loaders.pdf import PyPDFLoader
+from langchain_community.document_loaders.text import TextLoader
+from langchain_community.document_loaders.word_document import \
+    UnstructuredWordDocumentLoader
+from langchain_core.documents import Document
+
+class EpubReader(UnstructuredEPubLoader):
+    def __init__(self, file_path: str | list[str], 
+                 **unstructured_kwargs: Any):
+        super().__init__(file_path, **unstructured_kwargs,
+                        mode="elements", strategy="fast")
+
+class DocumentLoaderException(Exception):
+    pass
+
+class DocumentLoader(object):
+    """Loads documents with supported extensions."""
+    supported_extensions = {
+        ".pdf": PyPDFLoader,
+        ".txt": TextLoader,
+        ".epub": EpubReader,
+        ".docx": UnstructuredWordDocumentLoader,
+        ".doc": UnstructuredWordDocumentLoader,
+    }
+
+def load_document(temp_filepath: str) -> list[Document]:
+    """Load a file and return as list of documents."""
+    ext = pathlib.Path(temp_filepath).suffix
+    loader = DocumentLoader.supported_extensions.get(ext)
+    if not loader:
+        raise DocumentLoaderException(
+            f"Invalid extension {ext}"
+        )
+    loaded = loader(temp_filepath)
+    docs = loaded.load()
+    logging.info(docs)
+    return docs</code></pre>
+
+    <h3>2. LLM Setup (llms.py)</h3>
+
+    <pre><code>from langchain.embeddings import CacheBackedEmbeddings
+from langchain.storage import LocalFileStore
+from langchain_groq import ChatGroq
+from langchain_openai import OpenAIEmbeddings
+from config import set_environment
+
+set_environment()
+
+# Initialize LLM
+chat_model = ChatGroq(
+    model="deepseek-r1-distill-llama-70b",
+    temperature=0,
+    max_tokens=None,
+    timeout=None,
+    max_retries=2,
+)
+
+# Setup cached embeddings
+store = LocalFileStore("./cache/")
+underlying_embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-large",
+)
+
+EMBEDDINGS = CacheBackedEmbeddings.from_bytes_store(
+    underlying_embeddings,
+    store,
+    namespace=underlying_embeddings.model
+)</code></pre>
+
+    <h3>3. Document Retriever (retriever.py)</h3>
+
+    <pre><code>import os
+import tempfile
+from typing import List, Any
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from chapter4.document_loader import load_document
+from chapter4.llms import EMBEDDINGS
+
+VECTOR_STORE = InMemoryVectorStore(embedding=EMBEDDINGS)
+
+def split_documents(docs: List[Document]) -> list[Document]:
+    """Split each document."""
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1500,
+        chunk_overlap=200
+    )
+    return text_splitter.split_documents(docs)
+
+class DocumentRetriever(BaseRetriever):
+    """Retriever containing top k documents with user query."""
+    documents: List[Document] = []
+    k: int = 5
+
+    def model_post_init(self, ctx: Any) -> None:
+        self.store_documents(self.documents)
+
+    @staticmethod
+    def store_documents(docs: List[Document]) -> None:
+        """Add documents to vector store."""
+        splits = split_documents(docs)
+        VECTOR_STORE.add_documents(splits)
+
+    def add_uploaded_docs(self, uploaded_files):
+        """Add uploaded documents."""
+        docs = []
+        temp_dir = tempfile.TemporaryDirectory()
+        for file in uploaded_files:
+            temp_filepath = os.path.join(temp_dir.name, file.name)
+            with open(temp_filepath, "wb") as f:
+                f.write(file.getvalue())
+            docs.extend(load_document(temp_filepath))
+        self.documents.extend(docs)
+        self.store_documents(docs)
+
+    def _get_relevant_documents(
+        self, query: str, *,
+        run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        """Sync implementations for retriever."""
+        if len(self.documents) == 0:
+            return []
+        return VECTOR_STORE.similarity_search(query=query, k=self.k)</code></pre>
+
+    <div class="page-break"></div>
+
+    <h3>4. RAG Pipeline with LangGraph (rag.py)</h3>
+
+    <pre><code>from typing import Annotated
+from langchain_core.documents import Document
+from langchain_core.messages import AIMessage
+from langchain_core.prompts import ChatPromptTemplate
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.constants import END
+from langgraph.graph import START, StateGraph, add_messages
+from typing_extensions import List, TypedDict
+from chapter4.llms import chat_model
+from chapter4.retriever import DocumentRetriever
+
+# System prompt
+system_prompt = (
+    "You're a helpful AI assistant. Given a user question "
+    "and some corporate document snippets, write documentation."
+    "If none of the documents is relevant to the question, "
+    "mention that there's no relevant document, and then "
+    "answer the question to the best of your knowledge."
+    "\n\nHere are the corporate documents: {context}"
+)
+
+retriever = DocumentRetriever()
+prompt = ChatPromptTemplate.from_messages([
+    ("system", system_prompt),
+    ("human", "{question}"),
+])
+
+# Define state
+class State(TypedDict):
+    question: str
+    context: List[Document]
+    answer: str
+    issues_report: str
+    issues_detected: bool
+    messages: Annotated[list, add_messages]
+
+# Pipeline nodes
+def retrieve(state: State):
+    retrieved_docs = retriever.invoke(state["messages"][-1].content)
+    print(retrieved_docs)
+    return {"context": retrieved_docs}
+
+def generate(state: State):
+    docs_content = "\n\n".join(
+        doc.page_content for doc in state["context"]
+    )
+    messages = prompt.invoke({
+        "question": state["messages"][-1].content,
+        "context": docs_content
+    })
+    response = chat_model.invoke(messages)
+    print(response.content)
+    return {"answer": response.content}
+
+def double_check(state: State):
+    result = chat_model.invoke([{
+        "role": "user",
+        "content": (
+            f"Review the following project documentation for "
+            f"compliance with corporate standards. "
+            f"Return 'ISSUES FOUND' followed by any issues "
+            f"or 'NO ISSUES': {state['answer']}"
+        )
+    }])
+    if "ISSUES FOUND" in result.content:
+        print("issues detected")
+        return {
+            "issues_report": result.split(
+                "ISSUES FOUND", 1
+            )[1].strip(),
+            "issues_detected": True
+        }
+    print("no issues detected")
+    return {"issues_report": "", "issues_detected": False}
+
+def doc_finalizer(state: State):
+    """Finalize documentation by integrating feedback."""
+    if "issues_detected" in state and state["issues_detected"]:
+        response = chat_model.invoke(messages=[{
+            "role": "user",
+            "content": (
+                f"Revise the following documentation to address "
+                f"these feedback points: {state['issues_report']}\n"
+                f"Original Document: {state['answer']}\n"
+                f"Always return the full revised document."
+            )
+        }])
+        return {"messages": [AIMessage(response.content)]}
+    return {"messages": [AIMessage(state["answer"])]}
+
+# Build graph
+graph_builder = StateGraph(State).add_sequence(
+    [retrieve, generate, double_check, doc_finalizer]
+)
+graph_builder.add_edge(START, "retrieve")
+graph_builder.add_edge("doc_finalizer", END)
+
+memory = MemorySaver()
+graph = graph_builder.compile(checkpointer=memory)
+config = {"configurable": {"thread_id": "abc123"}}</code></pre>
+
+    <div class="page-break"></div>
+
+    <h3>5. Streamlit UI (streamlit_app.py)</h3>
+
+    <pre><code>import streamlit as st
+from langchain_core.messages import HumanMessage
+from chapter4.document_loader import DocumentLoader
+from chapter4.rag import graph, config, retriever
+
+st.set_page_config(
+    page_title="Corporate Documentation Manager",
+    layout="wide"
+)
+
+# Initialize session state
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if 'uploaded_files' not in st.session_state:
+    st.session_state.uploaded_files = []
+
+# Display chat history
+for message in st.session_state.chat_history:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Process uploaded files
+docs = retriever.add_uploaded_docs(st.session_state.uploaded_files)
+
+def process_message(message):
+    """Assistant response."""
+    response = graph.invoke(
+        {"messages": HumanMessage(message)},
+        config=config
+    )
+    return response["messages"][-1].content
+
+st.markdown("""
+# Corporate Documentation Manager with Citations
+""")
+
+# Create two columns
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    st.subheader("Chat Interface")
+    if user_message := st.chat_input("Enter your message:"):
+        # Display user message
+        with st.chat_message("User"):
+            st.markdown(user_message)
+        st.session_state.chat_history.append({
+            "role": "User",
+            "content": user_message
+        })
+        
+        # Get response
+        response = process_message(user_message)
+        
+        # Display assistant response
+        with st.chat_message("Assistant"):
+            st.markdown(response)
+        st.session_state.chat_history.append({
+            "role": "Assistant",
+            "content": response
+        })
+
+with col2:
+    st.subheader("Document Management")
+    uploaded_files = st.file_uploader(
+        "Upload Documents",
+        type=list(DocumentLoader.supported_extensions),
+        accept_multiple_files=True
+    )
+    if uploaded_files:
+        for file in uploaded_files:
+            if file.name not in st.session_state.uploaded_files:
+                st.session_state.uploaded_files.append(file)</code></pre>
+
+    <h3>Running the Application</h3>
+
+    <pre><code># On Linux/macOS
+PYTHONPATH=. streamlit run chapter4/streamlit_app.py
+
+# Then open browser to:
+http://localhost:8501</code></pre>
+
+    <div class="page-break"></div>
+
+    <h2>Troubleshooting RAG Systems</h2>
+
+    <h3>Seven Common Failure Points</h3>
+
+    <table>
+        <tr>
+            <th>Failure Point</th>
+            <th>Problem</th>
+            <th>Solution</th>
+        </tr>
+        <tr>
+            <td><strong>1. Missing Content</strong></td>
+            <td>System lacks relevant documents</td>
+            <td>Validate content during ingestion, add domain resources</td>
+        </tr>
+        <tr>
+            <td><strong>2. Missed Top-Ranked Docs</strong></td>
+            <td>Poor ranking excludes relevant docs</td>
+            <td>Advanced embeddings, hybrid search, sentence-level retrieval</td>
+        </tr>
+        <tr>
+            <td><strong>3. Context Window Limits</strong></td>
+            <td>Key info truncated</td>
+            <td>Optimize chunking, extract relevant sentences</td>
+        </tr>
+        <tr>
+            <td><strong>4. Extraction Failure</strong></td>
+            <td>LLM fails to synthesize context</td>
+            <td>Refine prompts, use explicit instructions, contrastive examples</td>
+        </tr>
+        <tr>
+            <td><strong>5. Format Compliance</strong></td>
+            <td>Correct content, wrong format</td>
+            <td>Structured output parsers, format examples, validation</td>
+        </tr>
+        <tr>
+            <td><strong>6. Specificity Mismatch</strong></td>
+            <td>Too general or too detailed</td>
+            <td>Query expansion, tailor prompts to user expertise</td>
+        </tr>
+        <tr>
+            <td><strong>7. Incomplete Information</strong></td>
+            <td>Captures only partial details</td>
+            <td>Increase retrieval diversity (MMR), refine query transformation</td>
+        </tr>
+    </table>
+
+    <h3>Best Practices</h3>
+
+    <div class="info">
+        <strong>Foundational Setup:</strong>
+        <ul>
+            <li>Comprehensive, high-quality document collections</li>
+            <li>Clear prompt formulations</li>
+            <li>Effective retrieval techniques (precision + relevance)</li>
+        </ul>
+    </div>
+
+    <div class="info">
+        <strong>Continuous Calibration:</strong>
+        <ul>
+            <li>Regular monitoring and user feedback</li>
+            <li>Knowledge base updates</li>
+            <li>Identify emerging issues during operation</li>
+        </ul>
+    </div>
+
+    <h2>Summary</h2>
+
+    <p>This chapter explored RAG systems comprehensively:</p>
+
+    <ul>
+        <li><strong>Foundation:</strong> Evolution from lexical to semantic search</li>
+        <li><strong>Components:</strong> Embeddings, vector stores, indexing strategies</li>
+        <li><strong>Pipeline:</strong> Document processing, chunking, retrieval, generation</li>
+        <li><strong>Implementation:</strong> Complete corporate documentation chatbot with LangGraph</li>
+        <li><strong>Advanced Techniques:</strong> Hybrid search, re-ranking, query transformation</li>
+        <li><strong>Production:</strong> Troubleshooting and best practices</li>
+    </ul>
+
+    <div class="
