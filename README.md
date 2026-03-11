@@ -2,7 +2,7 @@
 
 > **Advanced Retrieval-Augmented Generation with Hybrid Retrieval, Re-ranking, and Corrective RAG**
 
-A comprehensive learning project demonstrating 3 advanced RAG techniques from "Generative AI with LangChain" 2nd Edition. Built with FastAPI, LangChain, LangGraph, and React.
+A comprehensive learning project demonstrating 3 advanced RAG techniques Built with FastAPI, LangChain, LangGraph, and React.
 
 ![RAG Master](https://img.shields.io/badge/RAG-Master-6366f1?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python)
